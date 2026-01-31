@@ -70,15 +70,29 @@ body.no-scroll {
   inset: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.95), rgba(255, 236, 241, 0.9));
+  background: linear-gradient(130deg, #fff0f3, #ffe5ec, #fff7fb);
   z-index: 3000;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: clamp(30px, 5vw, 80px);
   transition: transform 0.8s cubic-bezier(0.86, 0, 0.07, 1), opacity 0.8s ease;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
   opacity: 1;
+  overflow: hidden;
+}
+
+.login-screen::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 158, 181, 0.3), transparent 70%);
+  top: 10%;
+  right: 5%;
+  filter: blur(10px);
+  pointer-events: none;
 }
 
 .login-hidden {
@@ -101,6 +115,103 @@ body.no-scroll {
   border: 1px solid rgba(255, 158, 181, 0.2);
   box-shadow: 0 25px 60px rgba(194, 24, 91, 0.12);
   position: relative;
+}
+
+.login-shell {
+  width: min(1120px, 95vw);
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+  gap: clamp(30px, 5vw, 70px);
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 48px;
+  border: 1px solid rgba(255, 158, 181, 0.3);
+  padding: clamp(30px, 4vw, 60px);
+  box-shadow: 0 30px 90px rgba(194, 24, 91, 0.18);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  animation: floatPanel 1.1s ease forwards;
+}
+
+.login-shell::after {
+  content: '❤';
+  position: absolute;
+  font-size: 9rem;
+  color: rgba(255, 158, 181, 0.15);
+  bottom: -20px;
+  right: 30px;
+  pointer-events: none;
+}
+
+.login-hero-panel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 210, 231, 0.65));
+  border-radius: 38px;
+  padding: clamp(24px, 4vw, 50px);
+  box-shadow: inset 0 0 0 1px rgba(255, 158, 181, 0.25);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-pill {
+  align-self: flex-start;
+  padding: 8px 22px;
+  border-radius: 999px;
+  background: rgba(255, 158, 181, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.login-hero-panel h1 {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(3rem, 4vw, 4.8rem);
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.login-hero-panel p {
+  font-size: 1.05rem;
+  color: #5a4036;
+  line-height: 1.8;
+}
+
+.login-hero-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.login-hero-detail span {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 158, 181, 0.3);
+  font-size: 0.85rem;
+  color: #6a4a42;
+}
+
+.login-box.glass {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: clamp(32px, 4vw, 48px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 25px 70px rgba(93, 64, 55, 0.15);
+}
+
+.login-title-small {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: #5a4036;
+  margin-bottom: 10px;
+}
+
+.login-box.glass .lock-container {
+  margin: 30px 0 15px;
 }
 
 .login-box::after,
@@ -1276,6 +1387,24 @@ section {
   right: 10%;
 }
 
+.first-month-section.section-locked .section-title {
+  opacity: 0.65;
+}
+
+.section-lock-veil {
+  position: absolute;
+  inset: 0;
+  border-radius: 56px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 228, 235, 0.25));
+  pointer-events: none;
+  z-index: 0;
+}
+
+.first-month-section > *:not(.section-lock-veil) {
+  position: relative;
+  z-index: 1;
+}
+
 .letter-wrapper {
   background: white;
   border-radius: 36px;
@@ -1285,6 +1414,7 @@ section {
   position: relative;
   font-size: 1.05rem;
   line-height: 1.9;
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
 .letter-wrapper::after {
@@ -1294,6 +1424,128 @@ section {
   border-radius: 30px;
   border: 1px dashed rgba(255, 158, 181, 0.3);
   pointer-events: none;
+}
+
+.letter-wrapper.locked-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  filter: grayscale(0.1) brightness(0.95);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 228, 235, 0.85));
+}
+
+.letter-wrapper.unlocking {
+  animation: unlockFade 0.7s forwards;
+}
+
+.letter-wrapper.locked-letter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 36px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.surprise-lock {
+  position: relative;
+  text-align: center;
+  max-width: 500px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.surprise-pill {
+  align-self: center;
+  padding: 10px 28px;
+  border-radius: 999px;
+  background: rgba(255, 158, 181, 0.2);
+  color: var(--accent);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.surprise-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: #4b2c24;
+}
+
+.surprise-note {
+  font-size: 1.05rem;
+  color: #5a4036;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.surprise-countdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 18px;
+  margin: 10px 0;
+}
+
+.surprise-countdown-slot {
+  padding: 16px 12px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 158, 181, 0.35);
+  box-shadow: 0 15px 35px rgba(93, 64, 55, 0.08);
+}
+
+.surprise-countdown-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.surprise-countdown-label {
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 2px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6a4a42;
+}
+
+.surprise-time {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  padding: 14px 20px;
+  border: 1px solid rgba(255, 158, 181, 0.3);
+  color: #6a4a42;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.surprise-unlock-btn {
+  margin: 10px auto;
+  padding: 14px 38px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(120deg, #ff94c2, #ff5f9e);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 20px 40px rgba(194, 24, 91, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.surprise-unlock-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 25px 55px rgba(194, 24, 91, 0.35);
 }
 
 .letter-greeting,
@@ -1948,6 +2200,28 @@ footer::before {
   }
 }
 
+@keyframes unlockFade {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98) translateY(-16px);
+  }
+}
+
+@keyframes floatPanel {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 3rem;
@@ -2001,6 +2275,15 @@ footer::before {
   .polaroid {
     width: 100%;
     transform: none !important;
+  }
+
+  .login-shell {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .login-hero-panel {
+    text-align: center;
   }
 
   .anniversary-hero {

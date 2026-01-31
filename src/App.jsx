@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 const SECRET_CODE = '2211';
 const HERO_TEXT = 'Nuestra historia infinita';
 const HERO_TAGLINE = 'Cartas, sorpresas y noches de cine solo para nosotros.';
+const FIRST_MONTH_UNLOCK_KEY = 'first_month_unlocked';
 
 const MEMORIES = [
   {
@@ -99,10 +100,21 @@ const LETTER_PARAGRAPHS = [
 const EXPECTATION_TEXT =
   'Y esto recién empieza… Porque cuando nos volvamos a ver, te esperan cosas bonitas. Momentos, sorpresas y detalles que he guardado con paciencia para ti. Así que espérame, ratoncita, que mi llegada viene cargada de abrazos pendientes, besos acumulados y mucho amor por darte.';
 
+const COUNTDOWN_UNLOCK_AT = new Date('2026-02-02T08:00:00-05:00');
 const NEXT_VISIT_DATE = new Date('2026-02-16T06:00:00-05:00');
 
 const getCountdownValues = () => {
   const diff = NEXT_VISIT_DATE.getTime() - Date.now();
+  const safeDiff = Math.max(diff, 0);
+  const days = Math.floor(safeDiff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((safeDiff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((safeDiff / (1000 * 60)) % 60);
+  const seconds = Math.floor((safeDiff / 1000) % 60);
+  return { days, hours, minutes, seconds };
+};
+
+const getUnlockCountdownValues = () => {
+  const diff = COUNTDOWN_UNLOCK_AT.getTime() - Date.now();
   const safeDiff = Math.max(diff, 0);
   const days = Math.floor(safeDiff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((safeDiff / (1000 * 60 * 60)) % 24);
@@ -118,6 +130,11 @@ const INSTRUCTIONS = [
   { emoji: '💍', text: 'El recuerdo de cuando dijimos "Sí".' },
 ];
 
+const hasUnlockedFirstMonth = () => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(FIRST_MONTH_UNLOCK_KEY) === 'true';
+};
+
 export default function App() {
   const [digits, setDigits] = useState(['', '', '', '']);
   const [stage, setStage] = useState('login'); // login | welcome | hidden
@@ -125,11 +142,16 @@ export default function App() {
   const [lockState, setLockState] = useState('');
   const [errorVisible, setErrorVisible] = useState(false);
   const [countdown, setCountdown] = useState(() => getCountdownValues());
+  const [unlockCountdown, setUnlockCountdown] = useState(() => getUnlockCountdownValues());
   const [showCountdown, setShowCountdown] = useState(false);
+  const [isSurpriseLocked, setIsSurpriseLocked] = useState(() => !hasUnlockedFirstMonth());
+  const [isUnlockAvailable, setIsUnlockAvailable] = useState(() => Date.now() >= COUNTDOWN_UNLOCK_AT.getTime());
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const particlesRef = useRef(null);
   const heroRef = useRef(null);
   const carouselRef = useRef(null);
   const countdownRef = useRef(null);
+  const unlockTimeoutRef = useRef(null);
   const inputRefs = useRef(Array.from({ length: 4 }, () => null));
 
   useEffect(() => {
@@ -268,6 +290,28 @@ export default function App() {
     }
   }, [showCountdown]);
 
+  useEffect(() => {
+    if (!isSurpriseLocked) return undefined;
+
+    const updateCountdown = () => {
+      const values = getUnlockCountdownValues();
+      setUnlockCountdown(values);
+      if (!isUnlockAvailable && COUNTDOWN_UNLOCK_AT.getTime() <= Date.now()) {
+        setIsUnlockAvailable(true);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [isSurpriseLocked, isUnlockAvailable]);
+
+  useEffect(() => () => {
+    if (unlockTimeoutRef.current) {
+      clearTimeout(unlockTimeoutRef.current);
+    }
+  }, []);
+
   const handleDigitChange = (index, rawValue) => {
     const sanitized = rawValue.replace(/\D/g, '').slice(-1);
     const nextDigits = [...digits];
@@ -325,8 +369,27 @@ export default function App() {
     setLockState('');
   };
 
+  const handleUnlockReveal = () => {
+    if (!isUnlockAvailable || isUnlocking) return;
+    setIsUnlocking(true);
+    unlockTimeoutRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(FIRST_MONTH_UNLOCK_KEY, 'true');
+      } catch (error) {
+        // ignore storage issues
+      }
+      setIsSurpriseLocked(false);
+      setIsUnlocking(false);
+      setShowCountdown(false);
+      unlockTimeoutRef.current = null;
+    }, 700);
+  };
+
   const overlayClass = `login-screen ${stage === 'hidden' ? 'login-hidden' : ''}`;
   const navClass = stage === 'hidden' ? 'nav-visible' : '';
+  const letterWrapperClasses = ['letter-wrapper', 'scroll-trigger'];
+  if (isSurpriseLocked) letterWrapperClasses.push('locked-letter');
+  if (isUnlocking) letterWrapperClasses.push('unlocking');
 
   return (
     <>
@@ -334,36 +397,47 @@ export default function App() {
 
       <div className={overlayClass}>
         {stage === 'login' && (
-          <div className="login-box">
-            <h1 className="login-title">Nuestra Página Juntos</h1>
-            <p className="login-subtitle">"Donde cada recuerdo vive por siempre" ✨</p>
-
-            <div className={`lock-container ${lockState}`}>
-              <div className="lock-shackle" />
-              <div className="lock-body" />
+          <div className="login-shell">
+            <div className="login-hero-panel">
+              <span className="login-pill">Solo nosotros</span>
+              <h1>Maycol &amp; Mabel</h1>
+              <p>
+                Esta puerta guarda cartas, promesas y destellos de todo lo que vivimos. Respira hondo y abre con la clave
+                que solo tú conoces.
+              </p>
             </div>
 
-            <div className="digit-container">
-              {digits.map((digit, index) => (
-                <input
-                  key={`digit-${index}`}
-                  ref={(el) => {
-                    inputRefs.current[index] = el;
-                  }}
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={1}
-                  className="digit-input"
-                  value={digit}
-                  onChange={(event) => handleDigitChange(index, event.target.value)}
-                  onKeyDown={(event) => handleKeyDown(event, index)}
-                  aria-label={`Digito ${index + 1}`}
-                />
-              ))}
-            </div>
+            <div className="login-box glass">
+              <h2 className="login-title-small">Portón a nuestra historia</h2>
+              <p className="login-subtitle">Es el código DDMM de tu cumpleaños. Cada dígito desbloquea un latido.</p>
 
-            <p className="hint-text">Pista: La fecha de tu cumpleaños (DDMM) 🎂</p>
-            <p className={`error-msg ${errorVisible ? 'error-visible' : ''}`}>Código incorrecto mi amor ❤️</p>
+              <div className={`lock-container ${lockState}`}>
+                <div className="lock-shackle" />
+                <div className="lock-body" />
+              </div>
+
+              <div className="digit-container">
+                {digits.map((digit, index) => (
+                  <input
+                    key={`digit-${index}`}
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={1}
+                    className="digit-input"
+                    value={digit}
+                    onChange={(event) => handleDigitChange(index, event.target.value)}
+                    onKeyDown={(event) => handleKeyDown(event, index)}
+                    aria-label={`Digito ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              <p className="hint-text">Pista: La fecha de tu cumpleaños (DDMM) 🎂</p>
+              <p className={`error-msg ${errorVisible ? 'error-visible' : ''}`}>Código incorrecto mi amor ❤️</p>
+            </div>
           </div>
         )}
 
@@ -432,10 +506,55 @@ export default function App() {
       </header>
 
       <main>
-        <section id="primer-mes" className="first-month-section">
+        <section id="primer-mes" className={`first-month-section ${isSurpriseLocked ? 'section-locked' : ''}`}>
+          {isSurpriseLocked && <div className="section-lock-veil" aria-hidden="true" />}
           <h2 className="section-title">Primer Mes</h2>
-          <div className="letter-wrapper scroll-trigger">
-            {!showCountdown ? (
+          <div className={letterWrapperClasses.join(' ')}>
+            {isSurpriseLocked ? (
+              <div className="surprise-lock">
+                <span className="surprise-pill">Sorpresa</span>
+                <h3 className="surprise-heading">Contador reservado</h3>
+                <p className="surprise-note">
+                  {!isUnlockAvailable ? (
+                    <>
+                      Estoy guardando esta parte para ti. El contador se abrirá el <strong>2 de febrero de 2026</strong> a las{' '}
+                      <strong>8:00 a.m.</strong>
+                    </>
+                  ) : (
+                    <>¡Llegó el momento! Presiona el botón para ver lo que guardé para ti.</>
+                  )}
+                </p>
+                {!isUnlockAvailable ? (
+                  <>
+                    <div className="surprise-countdown" aria-live="polite">
+                      {[
+                        { label: 'Días', value: unlockCountdown.days },
+                        { label: 'Horas', value: unlockCountdown.hours },
+                        { label: 'Min', value: unlockCountdown.minutes },
+                        { label: 'Seg', value: unlockCountdown.seconds },
+                      ].map((slot) => (
+                        <div key={slot.label} className="surprise-countdown-slot">
+                          <span className="surprise-countdown-number">{String(slot.value).padStart(2, '0')}</span>
+                          <span className="surprise-countdown-label">{slot.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="surprise-time">
+                      <span>Cuando llegue la hora, la magia aparecerá automáticamente. Confía en mí.</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="surprise-unlock-btn" onClick={handleUnlockReveal}>
+                      Destapar sorpresa
+                    </button>
+                    <div className="surprise-time">
+                      <span>Respira profundo y presiona cuando estés lista. Todo esto es para ti.</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : !showCountdown ? (
               <>
                 <p className="letter-greeting">Querida Mabel,</p>
                 {LETTER_PARAGRAPHS.map((text, index) => (
