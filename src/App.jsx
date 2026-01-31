@@ -52,7 +52,7 @@ const MEMORIES = [
 const INSTRUCTIONS = [
   { emoji: '✨', text: 'Momentos inolvidables de nuestra historia.' },
   { emoji: '💌', text: 'Cartas y sorpresas hechas con amor.' },
-  { emoji: '🎟️', text: 'Cine VIP: tu pase eterno a nuestra cita.' },
+  { emoji: '🎟️',text: 'Cine VIP: tu pase eterno a nuestra cita.' },
   { emoji: '💍', text: 'El recuerdo de cuando dijimos "Sí".' },
 ];
 
@@ -64,6 +64,7 @@ export default function App() {
   const [errorVisible, setErrorVisible] = useState(false);
   const particlesRef = useRef(null);
   const heroRef = useRef(null);
+  const carouselRef = useRef(null);
   const inputRefs = useRef(Array.from({ length: 4 }, () => null));
 
   useEffect(() => {
@@ -138,6 +139,58 @@ export default function App() {
 
     return () => observer.disconnect();
   }, [stage]);
+
+  useEffect(() => {
+    const rail = carouselRef.current;
+    if (!rail) return undefined;
+
+    let isPointerDown = false;
+    let startX = 0;
+    let scrollStart = 0;
+
+    const getX = (event) => (event.touches ? event.touches[0].pageX : event.pageX);
+
+    const handleDown = (event) => {
+      isPointerDown = true;
+      rail.classList.add('dragging');
+      startX = getX(event);
+      scrollStart = rail.scrollLeft;
+    };
+
+    const handleMove = (event) => {
+      if (!isPointerDown) return;
+      event.preventDefault();
+      const x = getX(event);
+      const walk = (x - startX) * 1.1;
+      rail.scrollLeft = scrollStart - walk;
+    };
+
+    const handleUp = () => {
+      isPointerDown = false;
+      rail.classList.remove('dragging');
+    };
+
+    const options = { passive: false };
+    rail.addEventListener('mousedown', handleDown);
+    rail.addEventListener('mousemove', handleMove);
+    rail.addEventListener('mouseleave', handleUp);
+    rail.addEventListener('mouseup', handleUp);
+    rail.addEventListener('touchstart', handleDown, options);
+    rail.addEventListener('touchmove', handleMove, options);
+    rail.addEventListener('touchend', handleUp);
+    rail.addEventListener('touchcancel', handleUp);
+
+    return () => {
+      rail.removeEventListener('mousedown', handleDown);
+      rail.removeEventListener('mousemove', handleMove);
+      rail.removeEventListener('mouseleave', handleUp);
+      rail.removeEventListener('mouseup', handleUp);
+      rail.removeEventListener('touchstart', handleDown, options);
+      rail.removeEventListener('touchmove', handleMove, options);
+      rail.removeEventListener('touchend', handleUp);
+      rail.removeEventListener('touchcancel', handleUp);
+    };
+  }, []);
 
   const handleDigitChange = (index, rawValue) => {
     const sanitized = rawValue.replace(/\D/g, '').slice(-1);
@@ -324,25 +377,39 @@ export default function App() {
         </section>
 
         <section id="historia">
+          <div className="section-label">Nuestros detalles</div>
           <h2 className="section-title">Momentos Inolvidables</h2>
-          <div className="timeline-container" id="timeline-box">
-            {MEMORIES.map((memory) => (
-              <a
-                key={memory.title}
-                href={memory.url}
-                target={memory.url.startsWith('#') ? undefined : '_blank'}
-                rel={memory.url.startsWith('#') ? undefined : 'noreferrer'}
-                className="memory-card scroll-trigger"
-              >
-                <div className="card-icon">{memory.icon}</div>
-                <div className="card-content">
-                  <div className="card-date">{memory.date}</div>
-                  <h3>{memory.title}</h3>
-                  <p>{memory.desc}</p>
-                  {!memory.url.startsWith('#') && <span className="card-details-btn">Ver Tu Detalle →</span>}
-                </div>
-              </a>
+          <p className="section-subtitle">Cada enlace es un portal a las sorpresas que preparé para ti, latiendo como nuestros corazones.</p>
+          <div className="timeline-hearts" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <span key={`heart-${index}`} className={`timeline-heart timeline-heart-${index + 1}`}>
+                ❤
+              </span>
             ))}
+          </div>
+          <div className="memories-carousel-wrapper">
+            <div className="memories-carousel" ref={carouselRef}>
+              {MEMORIES.map((memory, index) => (
+                <a
+                  key={memory.title}
+                  href={memory.url}
+                  target={memory.url.startsWith('#') ? undefined : '_blank'}
+                  rel={memory.url.startsWith('#') ? undefined : 'noreferrer'}
+                  className="memory-card scroll-trigger"
+                  style={{ animationDelay: `${index * 0.12}s` }}
+                >
+                  <div className="card-icon">{memory.icon}</div>
+                  <div className="card-content">
+                    <div className="card-date">{memory.date}</div>
+                    <h3>{memory.title}</h3>
+                    <p>{memory.desc}</p>
+                    {!memory.url.startsWith('#') && <span className="card-details-btn">Ver Tu Detalle →</span>}
+                  </div>
+                  <span className="card-heart" aria-hidden="true">❤</span>
+                </a>
+              ))}
+            </div>
+            <div className="carousel-hint">Arrastra para descubrir ↔</div>
           </div>
         </section>
 
