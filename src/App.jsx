@@ -4,6 +4,8 @@ const SECRET_CODE = '2211';
 const HERO_TEXT = 'Nuestra historia infinita';
 const HERO_TAGLINE = 'Cartas, sorpresas y noches de cine solo para nosotros.';
 const FIRST_MONTH_UNLOCK_KEY = 'first_month_unlocked';
+const SITE_UNLOCK_KEY = 'site_unlock_ready';
+const SITE_UNLOCK_AT = new Date('2026-01-01T12:00:00-05:00');
 
 const MEMORIES = [
   {
@@ -123,6 +125,16 @@ const getUnlockCountdownValues = () => {
   return { days, hours, minutes, seconds };
 };
 
+const getSiteCountdownValues = () => {
+  const diff = SITE_UNLOCK_AT.getTime() - Date.now();
+  const safeDiff = Math.max(diff, 0);
+  const days = Math.floor(safeDiff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((safeDiff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((safeDiff / (1000 * 60)) % 60);
+  const seconds = Math.floor((safeDiff / 1000) % 60);
+  return { days, hours, minutes, seconds };
+};
+
 const INSTRUCTIONS = [
   { emoji: '✨', text: 'Momentos inolvidables de nuestra historia.' },
   { emoji: '💌', text: 'Cartas y sorpresas hechas con amor.' },
@@ -133,6 +145,11 @@ const INSTRUCTIONS = [
 const hasUnlockedFirstMonth = () => {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(FIRST_MONTH_UNLOCK_KEY) === 'true';
+};
+
+const hasUnlockedSite = () => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(SITE_UNLOCK_KEY) === 'true';
 };
 
 export default function App() {
@@ -147,11 +164,14 @@ export default function App() {
   const [isSurpriseLocked, setIsSurpriseLocked] = useState(() => !hasUnlockedFirstMonth());
   const [isUnlockAvailable, setIsUnlockAvailable] = useState(() => Date.now() >= COUNTDOWN_UNLOCK_AT.getTime());
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [siteLocked, setSiteLocked] = useState(() => !hasUnlockedSite());
+  const [siteCountdown, setSiteCountdown] = useState(() => getSiteCountdownValues());
   const particlesRef = useRef(null);
   const heroRef = useRef(null);
   const carouselRef = useRef(null);
   const countdownRef = useRef(null);
   const unlockTimeoutRef = useRef(null);
+  const siteIntervalRef = useRef(null);
   const inputRefs = useRef(Array.from({ length: 4 }, () => null));
 
   useEffect(() => {
@@ -285,6 +305,34 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!siteLocked) return undefined;
+
+    const updateSiteCountdown = () => {
+      const values = getSiteCountdownValues();
+      setSiteCountdown(values);
+      if (SITE_UNLOCK_AT.getTime() <= Date.now()) {
+        try {
+          localStorage.setItem(SITE_UNLOCK_KEY, 'true');
+        } catch (error) {
+          // ignore storage errors
+        }
+        setSiteLocked(false);
+        if (siteIntervalRef.current) {
+          clearInterval(siteIntervalRef.current);
+        }
+      }
+    };
+
+    updateSiteCountdown();
+    siteIntervalRef.current = setInterval(updateSiteCountdown, 1000);
+    return () => {
+      if (siteIntervalRef.current) {
+        clearInterval(siteIntervalRef.current);
+      }
+    };
+  }, [siteLocked]);
+
+  useEffect(() => {
     if (showCountdown && countdownRef.current) {
       countdownRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -391,6 +439,36 @@ export default function App() {
   if (isSurpriseLocked) letterWrapperClasses.push('locked-letter');
   if (isUnlocking) letterWrapperClasses.push('unlocking');
 
+  if (siteLocked) {
+    return (
+      <div className="site-lock-screen">
+        <div className="site-lock-stars" aria-hidden="true" />
+        <div className="site-lock-content">
+          <span className="site-lock-pill">Algo se está preparando</span>
+          <h1>Estamos trabajando en tu sorpresa</h1>
+          <p>
+            Hay manos ocupadas, corazones acelerados y detalles terminando de tomar forma. Cuando este contador llegue a
+            cero, el portal se abrirá solo para ti.
+          </p>
+          <div className="site-lock-countdown" aria-live="polite">
+            {[
+              { label: 'Días', value: siteCountdown.days },
+              { label: 'Horas', value: siteCountdown.hours },
+              { label: 'Minutos', value: siteCountdown.minutes },
+              { label: 'Segundos', value: siteCountdown.seconds },
+            ].map((slot) => (
+              <div key={slot.label} className="site-lock-box">
+                <span className="site-lock-number">{String(slot.value).padStart(2, '0')}</span>
+                <span className="site-lock-label">{slot.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="site-lock-date">Desbloqueo: Domingo 1 de enero · 12:00 p.m.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div id="particles" ref={particlesRef} />
@@ -400,7 +478,7 @@ export default function App() {
           <div className="login-shell">
             <div className="login-hero-panel">
               <span className="login-pill">Solo nosotros</span>
-              <h1>Maycol &amp; Mabel</h1>
+              <h1>Nuestro amor Nuestra historia</h1>
               <p>
                 Esta puerta guarda cartas, promesas y destellos de todo lo que vivimos. Respira hondo y abre con la clave
                 que solo tú conoces.
