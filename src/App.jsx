@@ -5,7 +5,7 @@ const HERO_TEXT = 'Nuestra historia infinita';
 const HERO_TAGLINE = 'Cartas, sorpresas y noches de cine solo para nosotros.';
 const FIRST_MONTH_UNLOCK_KEY = 'first_month_unlocked';
 const SITE_UNLOCK_KEY = 'site_unlock_ready';
-const SITE_UNLOCK_AT = new Date('2026-01-01T12:00:00-05:00');
+const SITE_UNLOCK_AT = new Date('2026-02-01T08:00:00-05:00');
 
 const MEMORIES = [
   {
@@ -149,7 +149,29 @@ const hasUnlockedFirstMonth = () => {
 
 const hasUnlockedSite = () => {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem(SITE_UNLOCK_KEY) === 'true';
+  const unlockedByDate = Date.now() >= SITE_UNLOCK_AT.getTime();
+  const stored = localStorage.getItem(SITE_UNLOCK_KEY) === 'true';
+
+  if (unlockedByDate) {
+    if (!stored) {
+      try {
+        localStorage.setItem(SITE_UNLOCK_KEY, 'true');
+      } catch (error) {
+        // ignore storage errors during hydration
+      }
+    }
+    return true;
+  }
+
+  if (stored && !unlockedByDate) {
+    try {
+      localStorage.removeItem(SITE_UNLOCK_KEY);
+    } catch (error) {
+      // ignore storage errors during reset
+    }
+  }
+
+  return false;
 };
 
 export default function App() {
@@ -463,7 +485,7 @@ export default function App() {
               </div>
             ))}
           </div>
-          <p className="site-lock-date">Desbloqueo: Domingo 1 de enero · 12:00 p.m.</p>
+          <p className="site-lock-date">Desbloqueo: Domingo 1 de febrero · 8:00 a.m.</p>
         </div>
       </div>
     );
