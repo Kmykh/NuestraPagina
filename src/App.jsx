@@ -49,6 +49,68 @@ const MEMORIES = [
   },
 ];
 
+const VISITED_PLACES = [
+  {
+    title: 'Museo Larco',
+    desc: 'Entre huacos, reliquias y nuestra propia historia silenciosa.',
+    icon: '🏛️',
+  },
+  {
+    title: 'Comida de tacos',
+    desc: 'Picante, risas, manos entrelazadas y un montón de servilletas.',
+    icon: '🌮',
+  },
+  {
+    title: 'Pollito a la brasa',
+    desc: 'Los domingos saben mejor cuando compartimos la mesa.',
+    icon: '🍗',
+  },
+  {
+    title: 'Paseo por Jockey Cinemark',
+    desc: 'Películas, palomitas y ese abrazo que siempre espero en la butaca.',
+    icon: '🎬',
+  },
+];
+
+const ANNIVERSARY_FACTS = [
+  {
+    title: 'Sí oficial',
+    desc: '2 de enero de 2026. Latidos al mismo ritmo y un “sí” eterno.',
+  },
+  {
+    title: 'Lugar secreto',
+    desc: 'Un restaurante acogedor, risas compartidas y miradas que lo dijeron todo.',
+  },
+];
+
+const ANNIVERSARY_PROMISES = [
+  'Celebrar cada mes como si fuera el primero.',
+  'Ser tu abrazo seguro después de cada guardia.',
+  'Llenar nuestras fotos de risas, viajes y castillos.',
+];
+
+const LETTER_PARAGRAPHS = [
+  'Hoy cumplimos un mes. Un mes que, dicho en semanas, son cuatro… pero que en emociones se siente como mucho más. Cuatro semanas donde aprendimos, sentimos, reímos, estuvimos tristes, nos cuidamos y, sobre todo, nos elegimos.',
+  'Este mes no fue perfecto, pero fue real. Pasamos momentos intensos, conversaciones profundas y silencios que también dijeron cosas. Y aun así, aquí estamos. Más unidos, más conscientes, más enamorados.',
+  'No sabes lo feliz que me hace caminar contigo, mirarte y sentir que estoy exactamente donde quiero estar. Estoy muy enamorado de ti, de tu forma de ser, de tu sensibilidad, de tu fuerza y de cómo haces que mi mundo se sienta distinto desde que estás en él.',
+  'Gracias por este primer mes. Gracias por ser tú. Y gracias por elegirme también.',
+];
+
+const EXPECTATION_TEXT =
+  'Y esto recién empieza… Porque cuando nos volvamos a ver, te esperan cosas bonitas. Momentos, sorpresas y detalles que he guardado con paciencia para ti. Así que espérame, ratoncita, que mi llegada viene cargada de abrazos pendientes, besos acumulados y mucho amor por darte.';
+
+const NEXT_VISIT_DATE = new Date('2026-02-16T06:00:00-05:00');
+
+const getCountdownValues = () => {
+  const diff = NEXT_VISIT_DATE.getTime() - Date.now();
+  const safeDiff = Math.max(diff, 0);
+  const days = Math.floor(safeDiff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((safeDiff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((safeDiff / (1000 * 60)) % 60);
+  const seconds = Math.floor((safeDiff / 1000) % 60);
+  return { days, hours, minutes, seconds };
+};
+
 const INSTRUCTIONS = [
   { emoji: '✨', text: 'Momentos inolvidables de nuestra historia.' },
   { emoji: '💌', text: 'Cartas y sorpresas hechas con amor.' },
@@ -62,9 +124,12 @@ export default function App() {
   const [hasSeenIntro, setHasSeenIntro] = useState(false);
   const [lockState, setLockState] = useState('');
   const [errorVisible, setErrorVisible] = useState(false);
+  const [countdown, setCountdown] = useState(() => getCountdownValues());
+  const [showCountdown, setShowCountdown] = useState(false);
   const particlesRef = useRef(null);
   const heroRef = useRef(null);
   const carouselRef = useRef(null);
+  const countdownRef = useRef(null);
   const inputRefs = useRef(Array.from({ length: 4 }, () => null));
 
   useEffect(() => {
@@ -191,6 +256,17 @@ export default function App() {
       rail.removeEventListener('touchcancel', handleUp);
     };
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCountdown(getCountdownValues()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (showCountdown && countdownRef.current) {
+      countdownRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showCountdown]);
 
   const handleDigitChange = (index, rawValue) => {
     const sanitized = rawValue.replace(/\D/g, '').slice(-1);
@@ -325,6 +401,15 @@ export default function App() {
             <a href="#historia">Nuestra Historia</a>
           </li>
           <li>
+            <a href="#viajes">Viajes</a>
+          </li>
+          <li>
+            <a href="#lugares">Lugares</a>
+          </li>
+          <li>
+            <a href="#primer-mes">Primer Mes</a>
+          </li>
+          <li>
             <a href="#pedida">El Gran Día</a>
           </li>
         </ul>
@@ -347,6 +432,57 @@ export default function App() {
       </header>
 
       <main>
+        <section id="primer-mes" className="first-month-section">
+          <h2 className="section-title">Primer Mes</h2>
+          <div className="letter-wrapper scroll-trigger">
+            {!showCountdown ? (
+              <>
+                <p className="letter-greeting">Querida Mabel,</p>
+                {LETTER_PARAGRAPHS.map((text, index) => (
+                  <p
+                    key={`letter-${text.slice(0, 6)}-${index}`}
+                    className="letter-paragraph"
+                    style={{ animationDelay: `${index * 0.18 + 0.2}s` }}
+                  >
+                    {text}
+                  </p>
+                ))}
+                <p className="letter-signature">
+                  Con todo mi amor,
+                  <br />
+                  Maycol 🤍
+                </p>
+                <button
+                  type="button"
+                  className="letter-btn"
+                  onClick={() => setShowCountdown(true)}
+                >
+                  Continuar
+                </button>
+              </>
+            ) : (
+              <div ref={countdownRef} className="countdown-panel scroll-trigger visible">
+                <h3 className="section-title animated-title">Llegada de Ratoncito</h3>
+                <div className="countdown-glow" aria-hidden="true" />
+                <div className="countdown-grid" aria-live="polite">
+                  {[
+                    { label: 'Días', value: countdown.days },
+                    { label: 'Horas', value: countdown.hours },
+                    { label: 'Minutos', value: countdown.minutes },
+                    { label: 'Segundos', value: countdown.seconds },
+                  ].map((slot) => (
+                    <div key={slot.label} className="countdown-box">
+                      <span className="count-number">{String(slot.value).padStart(2, '0')}</span>
+                      <span className="count-label">{slot.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="letter-paragraph emphasis" style={{marginTop: '2rem'}}>{EXPECTATION_TEXT}</p>
+                <p className="countdown-warning">Quédate atenta al temporizador, mi amor: si mi llegada a Lima cambia, él también se moverá. Te amo infinito, ratoncita. ❤️</p>
+              </div>
+            )}
+          </div>
+        </section>
         <section id="cine" className="cine-section">
           <h2 className="section-title" style={{ color: '#d4af37' }}>
             Noche de Película
@@ -432,25 +568,94 @@ export default function App() {
           </div>
         </section>
 
+        <section id="viajes" className="travel-section">
+          <div className="section-label">Primer Destino</div>
+          <h2 className="section-title">Próximamente: Castillo de Chancay</h2>
+          <p className="travel-lead">
+            Aquí comenzará la colección de nuestros viajes juntos. Cada destino será un nuevo capítulo, lleno de momentos bonitos y recuerdos para siempre.
+          </p>
+          <div className="castle-card scroll-trigger">
+            <div className="castle-badge">Próximamente</div>
+            <h3>Castillo de Chancay</h3>
+            <p className="castle-soon">
+              Estoy guardando la fecha exacta y cada sorpresa para contártelo en persona. Solo quiero que sepas que este
+              viaje será nuestro gran "por fin".
+            </p>
+            <div className="castle-footer simple">
+              <span className="travel-status glow">plan secreto en marcha</span>
+              <span className="castle-date">Te aviso apenas sea hora </span>
+            </div>
+          </div>
+          <p className="travel-note">
+            Este es solo el comienzo. Cuando menos lo esperes, estaremos mirando el mar desde el castillo.
+          </p>
+        </section>
+
+        <section id="lugares" className="places-section">
+          <div className="section-label">Nuestros paseos</div>
+          <h2 className="section-title">Lugares Visitados Juntos</h2>
+          <p className="section-subtitle">
+            Todos esos rincones que ya nos pertenecen tienen un recuerdo, un olor y una risa guardada.
+          </p>
+          <div className="places-grid">
+            {VISITED_PLACES.map((place) => (
+              <article key={place.title} className="place-card scroll-trigger">
+                <div className="place-icon" aria-hidden="true">{place.icon}</div>
+                <h3>{place.title}</h3>
+                <p>{place.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section id="pedida" className="proposal-section">
+          <div className="section-label">Nuestro capítulo</div>
           <h2 className="section-title">Nuestro Aniversario</h2>
 
-          <div className="mice-container">
-            <img
-              src="/foto3.png"
-              alt="Nosotros"
-              className="hero-photo"
-              onError={(event) => {
-                event.currentTarget.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800';
-              }}
-            />
+          <div className="anniversary-hero scroll-trigger">
+            <div className="mice-container">
+              <img
+                src="/foto3.png"
+                alt="Nosotros"
+                className="hero-photo"
+                onError={(event) => {
+                  event.currentTarget.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800';
+                }}
+              />
+            </div>
+            <div className="anniversary-hero-copy">
+              <span className="anniversary-pill">2 · ENE · 2026</span>
+              <p className="anniversary-quote">
+                Ese día prometimos que cada año tendría más magia, más calma y más nosotros.
+              </p>
+            </div>
           </div>
 
           <p className="anniversary-text">
-            Desde el <strong>2 de Enero del 2026</strong>,<br />comenzamos nuestro capítulo más bonito.
+            Desde el <strong>2 de Enero del 2026</strong>,<br />comenzamos nuestro capítulo más bonito. Ese momento me enseñó
+            que tu sonrisa será por siempre mi hogar.
           </p>
 
-          <div className="polaroid-grid">
+          <div className="anniversary-highlight-grid">
+            {ANNIVERSARY_FACTS.map((fact) => (
+              <article key={fact.title} className="anniversary-highlight scroll-trigger">
+                <h3>{fact.title}</h3>
+                <p>{fact.desc}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="promise-card scroll-trigger">
+            <h3>Promesa de Ratón</h3>
+            <ul>
+              {ANNIVERSARY_PROMISES.map((promise) => (
+                <li key={promise}>{promise}</li>
+              ))}
+            </ul>
+            <span className="promise-signature">Siempre tuyo, Maycol.</span>
+          </div>
+
+          <div className="polaroid-grid scroll-trigger">
             <div className="polaroid">
               <img
                 src="/foto1.jpeg"
